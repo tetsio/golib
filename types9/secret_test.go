@@ -2,7 +2,7 @@ package types9_test
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
+	"fmt"
 	"github.com/tetsio/golib/types9"
 	"testing"
 )
@@ -27,7 +27,9 @@ func TestSecretString_String(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, tt.s.String())
+			if tt.want != tt.s.String() {
+				t.Errorf("Results are not equal!\nExpected:\n%s\nActual:\n%s\n", tt.want, tt.s.String())
+			}
 		})
 	}
 }
@@ -47,7 +49,9 @@ func TestSecretString_Value(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, tt.s.Value())
+			if tt.want != tt.s.Value() {
+				t.Errorf("Results are not equal!\nExpected:\n%s\nActual:\n%s\n", tt.want, tt.s.Value())
+			}
 		})
 	}
 }
@@ -56,13 +60,13 @@ func TestSecretString_MarshalText(t *testing.T) {
 	tests := []struct {
 		name    string
 		s       types9.SecretString
-		want    []byte
+		want    string
 		wantErr bool
 	}{
 		{
 			name:    "simple marshal text call",
 			s:       types9.SecretString(testValue),
-			want:    []byte(redacted),
+			want:    redacted,
 			wantErr: false,
 		},
 	}
@@ -70,8 +74,12 @@ func TestSecretString_MarshalText(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.s.MarshalText()
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, got)
+			if err != nil {
+				t.Errorf("Unexpected error: %s", err.Error())
+			}
+			if tt.want != string(got) {
+				t.Errorf("Results are not equal!\nExpected:\n%s\nActual:\n%s\n", tt.want, got)
+			}
 		})
 	}
 }
@@ -80,9 +88,13 @@ func TestSecretString_JSON(t *testing.T) {
 	type TestStructure struct {
 		SecretString types9.SecretString `json:"secret_string"`
 	}
-	var wantedOutput = []byte(`{"secret_string":"**HIDDEN**"}`)
+	var wantedOutput = fmt.Sprintf(`{"secret_string":"%s"}`, redacted)
 	testStructure := TestStructure{SecretString: types9.SecretString(testValue)}
 	got, err := json.Marshal(testStructure)
-	assert.NoError(t, err)
-	assert.Equal(t, wantedOutput, got)
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err.Error())
+	}
+	if wantedOutput != string(got) {
+		t.Errorf("Results are not equal!\nExpected:\n%s\nActual:\n%s\n", wantedOutput, got)
+	}
 }
